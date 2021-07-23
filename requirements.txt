@@ -1,0 +1,10 @@
+certifi==2021.5.30
+charset-normalizer==2.0.3
+idna==3.2
+password-generator==0.1.0
+pyasn1==0.4.8
+pyasn1-modules==0.2.8
+pypinyin==0.42.0
+python-ldap==3.3.1
+requests==2.26.0
+urllib3==1.26.6
