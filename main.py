@@ -3,6 +3,7 @@ from utils.wechat import Wechat_Client
 from utils.log import logger
 import password_generator
 from collections import defaultdict
+from utils.send_email import Sender
 
 
 def get_groups_from_ldap(client):
@@ -50,9 +51,12 @@ def run(fix=True):
         else:
             logger.info('用户' + u['name'] + '在ad中不存在')
             if fix:
+                sender = Sender()
                 for department in u['department']:
                     group_dn = wxclient.get_dn(corp, department)
-                    adclient.add_user('cn={},'.format(cn) + group_dn, password_generator.generate(length=10),
+                    password = password_generator.generate(length=10)
+                    sender.send('你的通用账号为：{}\n你的通用密码为：{}'.format(cn, password), u['email'])
+                    adclient.add_user('cn={},'.format(cn) + group_dn, password,
                                       u['email'])
 
     # 处理ad端多余的用户和组
