@@ -71,4 +71,9 @@ def run(fix=True):
 
 
 if __name__ == "__main__":
-    run(fix=True)  # fix传True代表需要同步ad服务器
+    import argparse
+
+    parser = argparse.ArgumentParser(description='是否需要同步ad服务器')
+    parser.add_argument('-a', dest='bool_', action='store_true', help='sync mode')
+    args = parser.parse_args()
+    run(fix=args.bool_)  # fix传True代表需要同步ad服务器
