@@ -16,14 +16,15 @@ def get_groups_from_ldap(client):
 def get_users_from_ldap(client):
     ad_users = defaultdict(bytes)
     for i in client.search('dc=weiwen,dc=com', 'objectClass=posixAccount'):
-        name = i[0].split(',')[0].split('=')[1]
-        ad_users[name] = i
+        user_dn = i[0]
+        ad_users[user_dn] = i
     return ad_users
 
 
 def run(fix=True):
     adclient = LDAP_Client()
     wxclient = Wechat_Client()
+    sender = Sender()  # 邮件发送器
 
     # 获取微信的组织结构
     res = wxclient.get_department_list(wxclient.token)
@@ -45,19 +46,17 @@ def run(fix=True):
     # 确定用户是否存在
     users = wxclient.get_users(1, wxclient.token, recursive=1)
     for u in users:
-        cn = u['userid']
-        if cn in ad_users:
-            del ad_users[cn]
-        else:
-            logger.info('用户' + u['name'] + '在ad中不存在')
-            if fix:
-                sender = Sender()
-                for department in u['department']:
-                    group_dn = wxclient.get_dn(corp, department)
+        u_dns = wxclient.get_user_dns(corp, u)
+        for u_dn in u_dns:
+            if u_dn in ad_users:
+                ad_users.pop(u_dn)
+            else:
+                if fix and u['email'] and not adclient.exists('mail=' + u['email']):
+                    logger.info('用户' + u['name'] + '在ad中不存在')
                     password = password_generator.generate(length=10)
-                    sender.send('你的通用账号为：{}\n你的通用密码为：{}'.format(cn, password), u['email'])
-                    adclient.add_user('cn={},'.format(cn) + group_dn, password,
-                                      u['email'])
+                    adclient.add_user(u_dn, password, u['email'])
+                    logger.info('用户' + u['name'] + '已添加进ad')
+                    sender.send('你的通用账号为：{}\n你的通用密码为：{}'.format(u['userid'], password), u['email'])
 
     # 处理ad端多余的用户和组
     for k in ad_groups.keys():
@@ -68,8 +67,8 @@ def run(fix=True):
     for k in ad_users.keys():
         logger.info('用户 {} 只在AD中存在'.format(k))
         if fix:
-            adclient.delete(ad_users[k][0])
+            adclient.delete(k)
 
 
 if __name__ == "__main__":
-    run(fix=True)
+    run(fix=True)  # fix传True代表需要同步ad服务器

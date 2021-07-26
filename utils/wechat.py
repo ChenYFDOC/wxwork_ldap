@@ -71,11 +71,23 @@ class Wechat_Client:
         while depid in dep_tree:
             dn.append(dep_tree[depid]['info']['name'])
             depid = dep_tree[depid]['info']['parentid']
-        logger.info('获取dn信息-- depid: {}; dn: {}'.format(tmp, json.dumps(dn)))
         for i, v in enumerate(dn):
             dn[i] = ''.join([i[0] for i in pypinyin.pinyin(v, style=pypinyin.NORMAL)])
         prefix = 'cn=' + ',cn='.join(dn)
         return prefix + ",dc=weiwen,dc=com"
+
+    def get_user_dns(self, corp, user):
+        """
+        根据微信返回的user信息生成dn列表
+        :param user:
+        :param corp: build tree的结构
+        :return:
+        """
+        dns_list = []
+        for department in user['department']:
+            group_dn = self.get_dn(corp, department)
+            dns_list.append('cn={},'.format(user['userid']) + group_dn)
+        return dns_list
 
     def get_users(self, depid, token, recursive=0):
         """

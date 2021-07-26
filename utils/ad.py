@@ -128,7 +128,7 @@ class LDAP_Client:
 
     def exists(self, dn):
         try:
-            res = self.cli.search_s(dn, ldap.SCOPE_SUBTREE)
+            res = self.cli.search_s('dc=weiwen,dc=com', ldap.SCOPE_SUBTREE, dn)
             if res:
                 return True
             else:
